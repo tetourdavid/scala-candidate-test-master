@@ -5,35 +5,37 @@ import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.http.scaladsl.server.Directives.{complete, get, handleExceptions, path, _}
 
 import com.letgo.scala_candidate_test.application.ShoutController.BadNumberOfTweetsException
+import com.letgo.scala_candidate_test.domain.TweetRepository
 
-class ShoutController {
+import scala.concurrent.ExecutionContext
 
-  val Limit = 10 // load from configuration
+class ShoutController(tweetRepository: TweetRepository, limit: Int)
+                     (implicit ec: ExecutionContext) {
 
   private val errorHandler = ExceptionHandler {
-    case e: BadNumberOfTweetsException => complete(StatusCodes.BadRequest, e.getMessage)
+    case e: BadNumberOfTweetsException => complete(StatusCodes.UnprocessableEntity, e.getMessage)
     case _ => complete("error happened")
   }
 
   val route: Route = handleExceptions(errorHandler) {
     get {
       path("shout" / Segment) { twitterUserName =>
-        parameters('limit.as[Int]) { limit =>
-            validate(limit)
-            complete(s"HELLO ${twitterUserName.toUpperCase()} !")
+        parameters('limit.as[Int]) { count =>
+            validate(count)
+            complete(tweetRepository.searchByUserName(twitterUserName, count).map(_.map(_.text).mkString("\n")))
         }
       }
     }
   }
 
   /** @throws BadNumberOfTweetsException for too large or negative tweetLimit */
-  private def validate(tweetLimit: Int): Unit = {
-    if (tweetLimit > Limit || tweetLimit < 0) throw BadNumberOfTweetsException(tweetLimit)
+  private def validate(tweetCount: Int): Unit = {
+    if (tweetCount > limit || tweetCount < 0) throw BadNumberOfTweetsException(tweetCount, limit)
   }
 }
 
-object ShoutController extends ShoutController {
+object ShoutController {
 
-  case class BadNumberOfTweetsException(number: Int)
-    extends Exception(s"Requested $number tweets, only 0 to $Limit can be requested.")
+  case class BadNumberOfTweetsException(requested: Int, limit: Int)
+    extends Exception(s"Requested $requested tweets, only 0 to $limit can be requested.")
 }
