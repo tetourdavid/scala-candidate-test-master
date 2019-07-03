@@ -1,5 +1,7 @@
 package com.letgo.scala_candidate_test.infrastructure
 
+import java.time.Instant
+
 import akka.actor.ActorSystem
 import com.letgo.scala_candidate_test.domain.TweetRepository
 import org.junit.runner.RunWith
@@ -9,10 +11,9 @@ import org.scalatest.junit.JUnitRunner
 import com.letgo.scala_candidate_test.Fixtures._
 
 import scala.collection.mutable
-
 import scala.language.postfixOps
-
 import scala.concurrent.Future
+import scala.util.Success
 
 @RunWith(classOf[JUnitRunner])
 class TweetMemoryRepositorySpec extends AsyncFlatSpec with Matchers with AsyncMockFactory {
@@ -89,7 +90,43 @@ class TweetMemoryRepositorySpec extends AsyncFlatSpec with Matchers with AsyncMo
     repository.searchByUserName(CachedName, Tweets.size) map assertResult(Tweets)
   }
 
-  // todo test caching at full capacity and cache eviction
+  it should "not cache over capacity" in {
+    val client = mock[TweetRepository]
+    (client.searchByUserName _ expects(UnCachedName, Tweets.size)).twice returns Future.successful(Tweets)
+    val repository: TweetMemoryRepository =
+      new TweetMemoryRepository(client, LongDuration, LongDuration, Capacity) {
+        override val store: mutable.HashMap[String, Record] = mutable.HashMap()
+        // fills cache to capacity
+        (1 to Capacity).map(index => store.put(CachedName + index, Record(Tweets)))
+      }
+    // both requests should rely on client with cache at full capacity
+    for {
+      first <- repository.searchByUserName(UnCachedName, Tweets.size)
+      second <- repository.searchByUserName(UnCachedName, Tweets.size)
+    } yield {
+      first shouldEqual Tweets
+      second shouldEqual Tweets
+    }
+  }
+
+  it should "evict expired tweets from cache" in {
+    // cache will be filled to capacity, all even records will be expired
+    val expiredCount = Capacity / 2
+    val client = mock[TweetRepository]
+    (client.searchByUserName _ expects(*, Tweets.size)).repeated(expiredCount) returns Future.successful(Tweets)
+    val repository: TweetMemoryRepository =
+      new TweetMemoryRepository(client, LongDuration, TinyDuration, Capacity){
+        override val store: mutable.HashMap[String, Record] = mutable.HashMap()
+        // fills cache to capacity
+        (1 to Capacity) map (index =>
+          store.put(CachedName + index, Record(Tweets, if (index % 2 == 0) Instant.MIN else Instant.now)))
+      }
+    // waiting to evict expired records
+    Thread.sleep(5)
+    val futures = (1 to Capacity) map (index => repository.searchByUserName(CachedName + index, Tweets.size))
+    val future = Future.sequence(futures.map(_.transform(Success(_)))).map(_.collect { case Success(x) => x })
+    future.map(allTweets => assert(allTweets.forall(_ == Tweets)))
+  }
 
 }
 
