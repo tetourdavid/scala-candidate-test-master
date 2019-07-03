@@ -1,6 +1,6 @@
 package com.letgo.scala_candidate_test
 
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.Executors
 
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration.Duration
@@ -8,7 +8,9 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import com.letgo.scala_candidate_test.application.ShoutController
+import com.letgo.scala_candidate_test.domain.ApplicationConfig
 import com.letgo.scala_candidate_test.infrastructure.{TweetClient, TweetMemoryRepository}
+import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
 
 object Starter extends StrictLogging {
@@ -19,16 +21,16 @@ object Starter extends StrictLogging {
 
     implicit val context: ExecutionContext = ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
 
-    // todo read from typesafe config
-    val limit = 10
-    val expiration = Duration(30, TimeUnit.SECONDS)
-    val eviction = Duration(30, TimeUnit.SECONDS)
-    val capacity = 100000
+    val config = new ApplicationConfig(ConfigFactory.load().getConfig(ApplicationConfig.Basename))
 
-    val interface = "0.0.0.0"
-    val port = 9000
+    val interface  = config.binding.interface
+    val port       = config.binding.port
+    val limit      = config.api.limit
+    val expiration = config.cache.expiration
+    val eviction   = config.cache.eviction
+    val capacity   = config.cache.capacity
 
-    val tweetClient = new TweetClient()
+    val tweetClient     = new TweetClient()
     val tweetRepository = new TweetMemoryRepository(tweetClient, expiration, eviction, capacity)
     val shoutController = new ShoutController(tweetRepository, limit)
 

@@ -1,7 +1,5 @@
 package com.letgo.scala_candidate_test.application
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.MissingQueryParamRejection
@@ -13,21 +11,21 @@ import org.junit.runner.RunWith
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FlatSpec, Matchers}
+import com.letgo.scala_candidate_test.Fixtures._
 
 import scala.concurrent.Future
-import scala.concurrent.duration.Duration
 
 @RunWith(classOf[JUnitRunner])
 class ShoutControllerSpec extends FlatSpec with Matchers with ScalatestRouteTest with MockFactory {
 
-  import ShoutControllerSpec._
-
   private implicit val actorSystem: ActorSystem = ActorSystem()
+  private val ExistingUser = "existingUsername"
+  private val NonExistingUser = "nonExistingUsername"
 
   private val tweetClient = mock[TweetRepository]
-  (tweetClient.searchByUserName _).expects(*, *).anyNumberOfTimes.returns(Future.successful(SampleTweets))
+  (tweetClient.searchByUserName _).expects(*, *).anyNumberOfTimes.returns(Future.successful(Tweets))
 
-  private val tweetRepository = new TweetMemoryRepository(tweetClient, SampleDuration, SampleDuration, Capacity) {
+  private val tweetRepository = new TweetMemoryRepository(tweetClient, LongDuration, LongDuration, Capacity) {
     override def searchByUserName(username: String, limit: Int): Future[Seq[Tweet]] =
       (username, limit) match {
         case (NonExistingUser, _) => throw UserNotFoundException(NonExistingUser)
@@ -69,14 +67,4 @@ class ShoutControllerSpec extends FlatSpec with Matchers with ScalatestRouteTest
     }
   }
 
-}
-
-object ShoutControllerSpec {
-  private val Limit = 10
-  private val SampleDuration = Duration(30, TimeUnit.SECONDS)
-  private val Capacity = 100000
-
-  private val ExistingUser = "existingUsername"
-  private val NonExistingUser = "nonExistingUsername"
-  private val SampleTweets = Seq(Tweet("Veni,"), Tweet("vidi,"), Tweet("vici"))
 }
