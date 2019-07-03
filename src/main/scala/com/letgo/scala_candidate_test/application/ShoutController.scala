@@ -1,19 +1,23 @@
 package com.letgo.scala_candidate_test.application
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{ExceptionHandler, Route, Directives}
-
+import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.server.{Directives, ExceptionHandler, Route}
 import com.letgo.scala_candidate_test.application.ShoutController.BadNumberOfTweetsException
-import com.letgo.scala_candidate_test.domain.{Tweet, TweetRepository}
+import com.letgo.scala_candidate_test.domain.TweetRepository
+import com.letgo.scala_candidate_test.infrastructure.TweetClient.UserNotFoundException
+import com.typesafe.scalalogging.StrictLogging
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-class ShoutController(tweetRepository: TweetRepository, limit: Int)
-                     (implicit ec: ExecutionContext) extends Directives with JsonSupport {
+class ShoutController(tweetRepository: TweetRepository, limit: Int)(implicit ec: ExecutionContext)
+  extends Directives with JsonSupport with StrictLogging {
 
-  private val errorHandler = ExceptionHandler {
-    case e: BadNumberOfTweetsException => complete(StatusCodes.UnprocessableEntity, e.getMessage)
-    case _ => complete("error happened")
+  private val errorHandler = {
+    ExceptionHandler {
+      case e: BadNumberOfTweetsException => logger.warn(e.getMessage); complete(UnprocessableEntity, e.getMessage)
+      case e: UserNotFoundException      => logger.warn(e.getMessage); complete(NotFound, e.getMessage)
+      case e: Throwable                  => logger.error(e.getMessage, e); complete(InternalServerError, e.getMessage)
+    }
   }
 
   val route: Route = handleExceptions(errorHandler) {

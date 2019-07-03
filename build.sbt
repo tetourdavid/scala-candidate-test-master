@@ -11,10 +11,12 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http"      % "10.1.5",
   "com.typesafe.akka" %% "akka-actor"     % "2.5.4",
   "com.typesafe.akka" %% "akka-stream"    % "2.5.4",
-  "junit"             %  "junit"          % "4.12"    % "test",
-  "org.scalatest"     %%  "scalatest"      % "3.0.3"   % "test",
-  "com.typesafe.akka" %% "akka-http-testkit" % "10.1.5" % "test",
-  "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.5"
+  "org.scalamock" %% "scalamock-scalatest-support" % "3.6.0" % Test,
+  "junit"             %  "junit"          % "4.12"    % Test,
+  "com.typesafe.akka" %% "akka-http-testkit" % "10.1.5" % Test,
+  "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.5",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
+  "ch.qos.logback" % "logback-classic" % "1.2.3"
 )
 
 addCommandAlias("c", "compile")

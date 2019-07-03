@@ -1,22 +1,49 @@
 package com.letgo.scala_candidate_test.application
 
+import java.util.concurrent.TimeUnit
+
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.MissingQueryParamRejection
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.letgo.scala_candidate_test.domain.TweetRepository
-import com.letgo.scala_candidate_test.infrastructure.TweetRepositoryInMemory
+import com.letgo.scala_candidate_test.domain.{Tweet, TweetRepository}
+import com.letgo.scala_candidate_test.infrastructure.TweetClient.UserNotFoundException
+import com.letgo.scala_candidate_test.infrastructure.TweetMemoryRepository
 import org.junit.runner.RunWith
+import org.scalamock.scalatest.MockFactory
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FlatSpec, Matchers}
 
-@RunWith(classOf[JUnitRunner])
-class ShoutControllerSpec extends FlatSpec with Matchers with ScalatestRouteTest {
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
-  val limit = 10
-  val tweetRepository: TweetRepository = new TweetRepositoryInMemory()
-  val controller: ShoutController = new ShoutController(tweetRepository, limit)
+@RunWith(classOf[JUnitRunner])
+class ShoutControllerSpec extends FlatSpec with Matchers with ScalatestRouteTest with MockFactory {
+
+  import ShoutControllerSpec._
+
+  private implicit val actorSystem: ActorSystem = ActorSystem()
+
+  private val tweetClient = mock[TweetRepository]
+  (tweetClient.searchByUserName _).expects(*, *).anyNumberOfTimes.returns(Future.successful(SampleTweets))
+
+  private val tweetRepository = new TweetMemoryRepository(tweetClient, SampleDuration, SampleDuration, Capacity) {
+    override def searchByUserName(username: String, limit: Int): Future[Seq[Tweet]] =
+      (username, limit) match {
+        case (NonExistingUser, _) => throw UserNotFoundException(NonExistingUser)
+        case _ => tweetClient.searchByUserName(username, limit)
+      }
+  }
+
+  private val controller: ShoutController = new ShoutController(tweetRepository, Limit )
 
   behavior of "Shout controller"
+
+  it should "return 200 for proper request" in {
+    Get(s"/shout/$ExistingUser?limit=$Limit") ~> controller.route ~> check {
+      status shouldEqual StatusCodes.OK
+    }
+  }
 
   it should "return 400 for missing limit" in {
     Get("/shout/realDonaldTrump") ~> controller.route ~> check {
@@ -24,16 +51,32 @@ class ShoutControllerSpec extends FlatSpec with Matchers with ScalatestRouteTest
     }
   }
 
+  it should "return 404 for non-existing user" in {
+    Get(s"/shout/$NonExistingUser?limit=$Limit") ~> controller.route ~> check {
+      status shouldEqual StatusCodes.NotFound
+    }
+  }
+
   it should "return 422 for more tweets than permitted by limit" in {
-    Get(s"/shout/realDonaldTrump?limit=${limit + 1}") ~> controller.route ~> check {
+    Get(s"/shout/$ExistingUser?limit=${Limit + 1}") ~> controller.route ~> check {
       status shouldEqual StatusCodes.UnprocessableEntity
     }
   }
 
   it should "return 422 for negative tweet limit" in {
-    Get("/shout/realDonaldTrump?limit=-3") ~> controller.route ~> check {
+    Get(s"/shout/$ExistingUser?limit=-3") ~> controller.route ~> check {
       status shouldEqual StatusCodes.UnprocessableEntity
     }
   }
 
+}
+
+object ShoutControllerSpec {
+  private val Limit = 10
+  private val SampleDuration = Duration(30, TimeUnit.SECONDS)
+  private val Capacity = 100000
+
+  private val ExistingUser = "existingUsername"
+  private val NonExistingUser = "nonExistingUsername"
+  private val SampleTweets = Seq(Tweet("Veni,"), Tweet("vidi,"), Tweet("vici"))
 }

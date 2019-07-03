@@ -19,11 +19,11 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
       JsArray(obj.map(tweet => JsString(encoded(tweet.shoutedText))).toVector)
     }
     override def read(json: JsValue): Seq[Tweet] = {
-      throw new UnsupportedOperationException("Tweet deserialization not supported.")
+      JsArray(json).elements.map(text => Tweet(text.toString)).seq
     }
   }
 
-  implicit def tweetSeqFormat(tweets: Future[Seq[Tweet]])
+  implicit def marshallTweets(tweets: Future[Seq[Tweet]])
                              (implicit ec: ExecutionContext): ToResponseMarshallable = tweets.map(_.toJson)
 
   /** @note based on [[https://stackoverflow.com/questions/5729806/encode-string-to-utf-8]] */

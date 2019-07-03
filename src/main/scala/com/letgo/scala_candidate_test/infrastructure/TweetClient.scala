@@ -1,13 +1,21 @@
 package com.letgo.scala_candidate_test.infrastructure
 
+import com.letgo.scala_candidate_test.domain.{Tweet, TweetRepository}
+import com.letgo.scala_candidate_test.infrastructure.TweetClient.UserNotFoundException
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-import com.letgo.scala_candidate_test.domain.{Tweet, TweetRepository}
+/** Client to Twitter REST API */
+class TweetClient(implicit ec: ExecutionContext) extends TweetRepository {
 
-class TweetRepositoryInMemory(implicit val ec: ExecutionContext) extends TweetRepository {
-
+  /**
+    * @return tweets from the username, up to the limit given
+    * @throws UserNotFoundException when such username is not recognized by Twitter
+    */
   override def searchByUserName(username: String, limit: Int): Future[Seq[Tweet]] = Future {
+    // mock implementation of the method
+    // no api requests sent over network
     Random.shuffle(tweets).take(limit)
   }
 
@@ -151,4 +159,10 @@ class TweetRepositoryInMemory(implicit val ec: ExecutionContext) extends TweetRe
   ).map(Tweet.apply)
   // scalastyle:on
 
+}
+
+object TweetClient {
+
+  case class UserNotFoundException(username: String)
+    extends Exception(s"User $username cannot be found.")
 }
