@@ -1,25 +1,25 @@
 package com.letgo.scala_candidate_test.domain
 
-import com.typesafe.config.Config
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import com.typesafe.config.Config
 
 class ApplicationConfig(root: Config) {
 
-  object binding {
-    val interface: String = root.getString("binding.interface")
-    val port: Int         = root.getInt("binding.port")
+  object Binding {
+    val Interface: String = root.getString("binding.interface")
+    val Port: Int         = root.getInt("binding.port")
   }
 
-  object api {
-    val limit: Int = root.getInt("api.limit")
+  object Api {
+    val Limit: Int = root.getInt("api.limit")
   }
 
-  object cache {
-    val expiration: FiniteDuration = root.getDuration("cache.expiration")
-    val eviction: FiniteDuration   = root.getDuration("cache.eviction")
-    val capacity: Int              = root.getInt("cache.capacity")
+  object Cache {
+    val Expiration: FiniteDuration = root.getDuration("cache.expiration")
+    val Eviction: FiniteDuration   = root.getDuration("cache.eviction")
+    val Capacity: Int              = root.getInt("cache.capacity")
   }
 
   /** @note see [[https://stackoverflow.com/questions/32076311/converting-java-to-scala-durations]] */

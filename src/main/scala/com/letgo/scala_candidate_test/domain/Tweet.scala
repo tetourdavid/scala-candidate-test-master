@@ -9,7 +9,6 @@ case class Tweet(text: String) {
     val shout = text.toUpperCase
     if (Pattern.matches("\\p{Punct}", text takeRight 1)) {
       shout.substring(0, shout.length - 1) + "!"
-    }
-    else shout + "!"
+    } else { shout + "!" }
   }
 }

@@ -1,19 +1,20 @@
 package com.letgo.scala_candidate_test.application
 
+import scala.concurrent.Future
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.MissingQueryParamRejection
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.junit.runner.RunWith
+import org.scalamock.scalatest.MockFactory
+import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.junit.JUnitRunner
+
+import com.letgo.scala_candidate_test.Fixtures._
 import com.letgo.scala_candidate_test.domain.{Tweet, TweetRepository}
 import com.letgo.scala_candidate_test.infrastructure.TweetClient.UserNotFoundException
 import com.letgo.scala_candidate_test.infrastructure.TweetMemoryRepository
-import org.junit.runner.RunWith
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.{FlatSpec, Matchers}
-import com.letgo.scala_candidate_test.Fixtures._
-
-import scala.concurrent.Future
 
 @RunWith(classOf[JUnitRunner])
 class ShoutControllerSpec extends FlatSpec with Matchers with ScalatestRouteTest with MockFactory {

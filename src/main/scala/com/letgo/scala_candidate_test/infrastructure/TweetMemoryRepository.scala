@@ -3,19 +3,22 @@ package com.letgo.scala_candidate_test.infrastructure
 import java.time.Instant
 import java.time.temporal.ChronoUnit.MILLIS
 
+import scala.collection.parallel.mutable
+import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
+
 import akka.actor.ActorSystem
 
-import scala.concurrent.{ExecutionContext, Future}
 import com.letgo.scala_candidate_test.domain.{Tweet, TweetRepository}
 import com.letgo.scala_candidate_test.infrastructure.TweetClient.UserNotFoundException
 
-import scala.collection.mutable
-import scala.concurrent.duration.FiniteDuration
-
-class TweetMemoryRepository(client: TweetRepository, expiration: FiniteDuration, eviction: FiniteDuration, capacity: Int)
+class TweetMemoryRepository(client: TweetRepository,
+                            expiration: FiniteDuration,
+                            eviction: FiniteDuration,
+                            capacity: Int)
                            (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends TweetRepository {
 
-  protected val store: mutable.HashMap[String, Record] = mutable.HashMap()
+  protected val store: mutable.ParHashMap[String, Record] = mutable.ParHashMap()
 
   override def searchByUserName(username: String, limit: Int): Future[Seq[Tweet]] = {
     store.get(username) match {
@@ -47,4 +50,5 @@ class TweetMemoryRepository(client: TweetRepository, expiration: FiniteDuration,
   } }
   /** @note see [[https://stackoverflow.com/questions/16625464/scheduled-executor-in-scala]] */
   actorSystem.scheduler.schedule(eviction, eviction, evictCache)
+
 }

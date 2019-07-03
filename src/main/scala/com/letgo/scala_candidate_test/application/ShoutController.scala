@@ -1,13 +1,15 @@
 package com.letgo.scala_candidate_test.application
 
+import scala.concurrent.ExecutionContext
+
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.{Directives, ExceptionHandler, Route}
+import com.typesafe.scalalogging.StrictLogging
+
 import com.letgo.scala_candidate_test.application.ShoutController.BadNumberOfTweetsException
 import com.letgo.scala_candidate_test.domain.TweetRepository
 import com.letgo.scala_candidate_test.infrastructure.TweetClient.UserNotFoundException
-import com.typesafe.scalalogging.StrictLogging
 
-import scala.concurrent.ExecutionContext
 
 class ShoutController(tweetRepository: TweetRepository, limit: Int)(implicit ec: ExecutionContext)
   extends Directives with JsonSupport with StrictLogging {

@@ -4,14 +4,16 @@ import java.util.concurrent.Executors
 
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration.Duration
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
+import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.StrictLogging
+
 import com.letgo.scala_candidate_test.application.ShoutController
 import com.letgo.scala_candidate_test.domain.ApplicationConfig
 import com.letgo.scala_candidate_test.infrastructure.{TweetClient, TweetMemoryRepository}
-import com.typesafe.config.ConfigFactory
-import com.typesafe.scalalogging.StrictLogging
 
 object Starter extends StrictLogging {
   def main(args: Array[String]): Unit = {
@@ -23,12 +25,12 @@ object Starter extends StrictLogging {
 
     val config = new ApplicationConfig(ConfigFactory.load().getConfig(ApplicationConfig.Basename))
 
-    val interface  = config.binding.interface
-    val port       = config.binding.port
-    val limit      = config.api.limit
-    val expiration = config.cache.expiration
-    val eviction   = config.cache.eviction
-    val capacity   = config.cache.capacity
+    val interface  = config.Binding.Interface
+    val port       = config.Binding.Port
+    val limit      = config.Api.Limit
+    val expiration = config.Cache.Expiration
+    val eviction   = config.Cache.Eviction
+    val capacity   = config.Cache.Capacity
 
     val tweetClient     = new TweetClient()
     val tweetRepository = new TweetMemoryRepository(tweetClient, expiration, eviction, capacity)

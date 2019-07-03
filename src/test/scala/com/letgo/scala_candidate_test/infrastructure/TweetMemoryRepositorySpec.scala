@@ -2,18 +2,19 @@ package com.letgo.scala_candidate_test.infrastructure
 
 import java.time.Instant
 
+import scala.collection.parallel.mutable
+import scala.concurrent.Future
+import scala.language.postfixOps
+import scala.util.Success
+
 import akka.actor.ActorSystem
-import com.letgo.scala_candidate_test.domain.TweetRepository
 import org.junit.runner.RunWith
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.{AsyncFlatSpec, Matchers}
 import org.scalatest.junit.JUnitRunner
-import com.letgo.scala_candidate_test.Fixtures._
 
-import scala.collection.mutable
-import scala.language.postfixOps
-import scala.concurrent.Future
-import scala.util.Success
+import com.letgo.scala_candidate_test.Fixtures._
+import com.letgo.scala_candidate_test.domain.TweetRepository
 
 @RunWith(classOf[JUnitRunner])
 class TweetMemoryRepositorySpec extends AsyncFlatSpec with Matchers with AsyncMockFactory {
@@ -28,7 +29,7 @@ class TweetMemoryRepositorySpec extends AsyncFlatSpec with Matchers with AsyncMo
     val client = mock[TweetRepository]
     val repository: TweetMemoryRepository =
       new TweetMemoryRepository(client, LongDuration, LongDuration, Capacity) {
-        override val store: mutable.HashMap[String, Record] = mutable.HashMap()
+        override val store: mutable.ParHashMap[String, Record] = mutable.ParHashMap()
         // 3 tweets are stored
         store.put(CachedName, Record(Tweets))
       }
@@ -42,7 +43,7 @@ class TweetMemoryRepositorySpec extends AsyncFlatSpec with Matchers with AsyncMo
     client.searchByUserName _ expects(*, *) never
     val repository: TweetMemoryRepository =
       new TweetMemoryRepository(client, LongDuration, LongDuration, Capacity) {
-        override val store: mutable.HashMap[String, Record] = mutable.HashMap()
+        override val store: mutable.ParHashMap[String, Record] = mutable.ParHashMap()
         store.put(CachedName, Record(Tweets))
       }
     repository.searchByUserName(CachedName, Tweets.size) map assertResult(Tweets)
@@ -69,7 +70,7 @@ class TweetMemoryRepositorySpec extends AsyncFlatSpec with Matchers with AsyncMo
     (client.searchByUserName _ expects(CachedName, Tweets.size)).once returns Future.successful(Tweets)
     val repository: TweetMemoryRepository =
       new TweetMemoryRepository(client, TinyDuration, LongDuration, Capacity) {
-        override val store: mutable.HashMap[String, Record] = mutable.HashMap()
+        override val store: mutable.ParHashMap[String, Record] = mutable.ParHashMap()
         store.put(CachedName, Record(Tweets))
       }
     // waiting for the cache to expire
@@ -82,7 +83,7 @@ class TweetMemoryRepositorySpec extends AsyncFlatSpec with Matchers with AsyncMo
     (client.searchByUserName _ expects(CachedName, Tweets.size)).once returns Future.successful(Tweets)
     val repository: TweetMemoryRepository =
       new TweetMemoryRepository(client, LongDuration, LongDuration, Capacity) {
-        override val store: mutable.HashMap[String, Record] = mutable.HashMap()
+        override val store: mutable.ParHashMap[String, Record] = mutable.ParHashMap()
         // 2 tweets are be cached
         store.put(CachedName, Record(Tweets take 2))
       }
@@ -95,7 +96,7 @@ class TweetMemoryRepositorySpec extends AsyncFlatSpec with Matchers with AsyncMo
     (client.searchByUserName _ expects(UnCachedName, Tweets.size)).twice returns Future.successful(Tweets)
     val repository: TweetMemoryRepository =
       new TweetMemoryRepository(client, LongDuration, LongDuration, Capacity) {
-        override val store: mutable.HashMap[String, Record] = mutable.HashMap()
+        override val store: mutable.ParHashMap[String, Record] = mutable.ParHashMap()
         // fills cache to capacity
         (1 to Capacity).map(index => store.put(CachedName + index, Record(Tweets)))
       }
@@ -116,7 +117,7 @@ class TweetMemoryRepositorySpec extends AsyncFlatSpec with Matchers with AsyncMo
     (client.searchByUserName _ expects(*, Tweets.size)).repeated(expiredCount) returns Future.successful(Tweets)
     val repository: TweetMemoryRepository =
       new TweetMemoryRepository(client, LongDuration, TinyDuration, Capacity){
-        override val store: mutable.HashMap[String, Record] = mutable.HashMap()
+        override val store: mutable.ParHashMap[String, Record] = mutable.ParHashMap()
         // fills cache to capacity
         (1 to Capacity) map (index =>
           store.put(CachedName + index, Record(Tweets, if (index % 2 == 0) Instant.MIN else Instant.now)))

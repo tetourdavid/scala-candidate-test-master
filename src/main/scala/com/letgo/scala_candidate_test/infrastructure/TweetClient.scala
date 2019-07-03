@@ -1,10 +1,10 @@
 package com.letgo.scala_candidate_test.infrastructure
 
-import com.letgo.scala_candidate_test.domain.{Tweet, TweetRepository}
-import com.letgo.scala_candidate_test.infrastructure.TweetClient.UserNotFoundException
-
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
+
+import com.letgo.scala_candidate_test.domain.{Tweet, TweetRepository}
+import com.letgo.scala_candidate_test.infrastructure.TweetClient.UserNotFoundException
 
 /** Client to Twitter REST API */
 class TweetClient(implicit ec: ExecutionContext) extends TweetRepository {

@@ -2,12 +2,13 @@ package com.letgo.scala_candidate_test.application
 
 import java.nio.charset.StandardCharsets._
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import com.letgo.scala_candidate_test.domain.Tweet
 import spray.json.DefaultJsonProtocol
 
-import scala.concurrent.{ExecutionContext, Future}
+import com.letgo.scala_candidate_test.domain.Tweet
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 

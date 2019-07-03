@@ -2,9 +2,9 @@ package com.letgo.scala_candidate_test
 
 import java.util.concurrent.TimeUnit
 
-import com.letgo.scala_candidate_test.domain.Tweet
-
 import scala.concurrent.duration.{Duration, FiniteDuration}
+
+import com.letgo.scala_candidate_test.domain.Tweet
 
 object Fixtures {
 
